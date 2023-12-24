@@ -39,7 +39,7 @@ class TrainingArguments(transformers.TrainingArguments):
     cache_dir: Optional[str] = field(default=None)
     optim: str = field(default="adamw_torch")
     model_max_length: int = field(
-        default=512,
+        default=2048,
         metadata={"help": "Maximum sequence length. Sequences will be right padded (and possibly truncated)."},
     )
     lora_alpha: int = field(default=16)
@@ -220,6 +220,10 @@ def train():
 
     data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
     data_module = dict(train_dataset=train_dataset, eval_dataset=None, data_collator=data_collator)
+
+    model.config.use_cache = False  # required for gradient checkpointing
+    model.enable_input_require_grads()  # required for gradient checkpointing
+    model.gradient_checkpointing_enable()  # enable gradient checkpointing
 
     trainer = Trainer(
         model=model, tokenizer=tokenizer,
